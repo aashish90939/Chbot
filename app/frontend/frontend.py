@@ -110,9 +110,9 @@ def retrieve_and_answer(question):
             "5. *Answer Formatting*: Avoid referencing 'documents' or 'contexts.' Provide straightforward answers and, if relevant links are found, display them at the end in a format like this:\n\n"
             "'Related links:\nhttps://university-website.com/info1\nhttps://university-website.com/info2'\n\n"
             
-            "6. *No Answer Available*: If none of the documents contain the answer, respond with a message indicating that the information is not available in this dataset."
+            "6. *No Answer Available*: If none of the documents contain the answer, respond with a message indicating that the information is not available in this dataset rather than giving false information ,in this case try to give guidlines suggesting correct queries"
             
-            #"7. *Basic Greetings and Manners* If there are some greetins as a user query please reply in good manner"
+            "7. *Basic Greetings and Manners* If there are some greetins as a user query please reply in good manner"
         )
     },
     *recent_conversations,  # Add recent conversation history into the messages list

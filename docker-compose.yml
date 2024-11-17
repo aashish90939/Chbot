@@ -6,7 +6,12 @@ services:
       context: .
       dockerfile: Dockerfile
     working_dir: /app/scrapper
-    command: ["scrapy", "crawl", "hs-rheinwaal"]
+    command:
+      [
+        "bash",
+        "-c",
+        "scrapy crawl hs-rheinwaal && touch /app/scraper_done.flag",
+      ]
     volumes:
       - ./app:/app
 
@@ -15,7 +20,12 @@ services:
       context: .
       dockerfile: Dockerfile
     working_dir: /app/helper
-    command: ["python", "data_preprocesser.py"]
+    command:
+      [
+        "bash",
+        "-c",
+        "while [ ! -f /app/scraper_done.flag ]; do sleep 60; done && python data_preprocesser.py && touch /app/processor_done.flag",
+      ]
     depends_on:
       - scraper
     volumes:
@@ -26,7 +36,12 @@ services:
       context: .
       dockerfile: Dockerfile
     working_dir: /app/frontend
-    command: ["streamlit", "run", "frontend.py"]
+    command:
+      [
+        "bash",
+        "-c",
+        "while [ ! -f /app/processor_done.flag ]; do sleep 60; done && streamlit run frontend.py",
+      ]
     ports:
       - "8501:8501"
     depends_on:
