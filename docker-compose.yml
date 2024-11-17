@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  scraper:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app/scrapper
+    command: ["scrapy", "crawl", "hs-rheinwaal"]
+    volumes:
+      - ./app:/app
+
+  processor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app/helper
+    command: ["python", "data_preprocesser.py"]
+    depends_on:
+      - scraper
+    volumes:
+      - ./app:/app
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    working_dir: /app/frontend
+    command: ["streamlit", "run", "frontend.py"]
+    ports:
+      - "8501:8501"
+    depends_on:
+      - processor
+    volumes:
+      - ./app:/app

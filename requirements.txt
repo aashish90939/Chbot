@@ -1,0 +1,11 @@
+scrapy==2.11.2
+bs4==0.0.2
+aiofiles==24.1.0
+markdownify==0.13.1
+matplotlib==3.9.2
+numpy==1.26.4
+chromadb==0.5.18
+langchain==0.3.7
+openai==0.28
+langchain-community==0.3.7
+streamlit==1.40.1
