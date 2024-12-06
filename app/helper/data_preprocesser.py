@@ -11,6 +11,15 @@ from langchain.vectorstores.chroma import Chroma
 from typing import List, Tuple
 import logging
 import openai
+from dotenv import load_dotenv
+
+
+# Load environment variables
+load_dotenv()
+
+    
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+openai.api_key = OPENAI_API_KEY
 
 # Output folder for saved plots
 OUTPUT_FOLDER = '../data/output_plots'
@@ -33,7 +42,7 @@ def save_processed_data(processed_data, original_path, root_path):
     try:
         with open(new_path, 'w', encoding='utf-8') as f:
             f.write(processed_data)
-        print(f"Successfully processed and saved: {new_path}")
+        #print(f"Successfully processed and saved: {new_path}")
     except (IOError, UnicodeEncodeError) as e:
         print(f"Error saving processed data for file {new_path}: {e}")
 
@@ -53,13 +62,23 @@ def count_words(text: str) -> int:
 
 # Preprocess files in the directory
 path = Path('../data/crawled')
-for file_path in path.rglob('*'):
+file_paths = list(path.rglob('*'))
+total_files = len([fp for fp in file_paths if fp.is_file()])  # Count total files
+processed_files = 0  # Initialize counter
+
+for file_path in file_paths:
     if file_path.is_file():
         try:
             data = read_file_with_fallback(str(file_path))
             if data:
                 processed_data = preprocess_data(data)
                 save_processed_data(processed_data, str(file_path), str(path))
+                processed_files += 1
+                
+                # Display progress after every 100 files or when finished
+                if processed_files % 100 == 0 or processed_files == total_files:
+                    remaining_files = total_files - processed_files
+                    print(f"Progress: {processed_files}/{total_files} files processed, {remaining_files} remaining.")
         except (IOError, UnicodeDecodeError) as e:
             print(f"Error processing file {file_path}: {e}")
 
@@ -122,7 +141,7 @@ def plot_character_distribution(character_counts):
 plot_character_distribution(character_counts)
 
 class CharacterTextSplitter:
-    def __init__(self, chunk_size, chunk_overlap):
+    def _init_(self, chunk_size, chunk_overlap):
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
 
@@ -140,8 +159,7 @@ class CharacterTextSplitter:
 
 # Initialize splitter
 text_splitter = CharacterTextSplitter(
-    chunk_size=5599,
-    chunk_overlap=400
+    chunk_size=5599,chunk_overlap=400
 )
 
 # Plotting word count distribution after document splitting
@@ -240,7 +258,7 @@ plot_character_distribution_after_split(character_counts_processed)
 
 # Logging setup
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(_name_)
 
 # Initialize database connection
 try:
@@ -253,15 +271,27 @@ except Exception as e:
     logger.error(f"Database connection error: {e}")
 
 # Embedding function
-openai.api_key = "sk-UDiNH2rFuDEm-D18WWXxjObrWjzKkkYjc8MfYs28M-T3BlbkFJU8fXRAZdsJxG_oatkALud45atUwZ6VV1ig8hxxrrEA"
+openai.api_key = OPENAI_API_KEY
 
 class MyEmbeddingFunction(EmbeddingFunction):
-    def __init__(self):
+    def _init_(self):
         self.model = "text-embedding-3-small"
 
-    def embed_documents(self, texts):
-        return [openai.Embedding.create(model=self.model, input=text)['data'][0]['embedding'] for text in texts]
 
+    def embed_documents(self, texts):
+        embeddings = []
+        for text in texts:
+            for attempt in range(10):  # Retry up to 3 times
+                try:
+                    response = openai.Embedding.create(model=self.model, input=text, timeout=1200)
+                    embeddings.append(response['data'][0]['embedding'])
+                    break
+                except openai.error.Timeout as e:
+                    logger.error(f"Timeout error on attempt {attempt + 1}: {e}")
+                    time.sleep(5)  # Wait before retrying
+        return embeddings
+    
+    
 embedding_dimension = 1536
 
 
@@ -273,8 +303,22 @@ db = Chroma(
     collection_metadata={"hnsw:space": "cosine", "dimension": embedding_dimension}
 )
 
-# Save documents to Chroma database
-for doc in documents:
+
+
+
+
+# Initialize counters
+total_documents = len(documents)
+saved_documents = 0
+
+# Save documents to Chroma database with progress tracking
+for i, doc in enumerate(documents, start=1):
     db.add_documents([Document(page_content=doc.page_content, metadata=doc.metadata)])
+    saved_documents += 1
+
+    # Display progress after every 100 documents
+    if saved_documents % 100 == 0 or saved_documents == total_documents:
+        remaining_documents = total_documents - saved_documents
+        print(f"Progress: {saved_documents}/{total_documents} saved, {remaining_documents} remaining.")
 
 logger.info("Document storage complete.")

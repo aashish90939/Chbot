@@ -11,7 +11,7 @@ load_dotenv()
 
     
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-openai.api_key = "sk-UDiNH2rFuDEm-D18WWXxjObrWjzKkkYjc8MfYs28M-T3BlbkFJU8fXRAZdsJxG_oatkALud45atUwZ6VV1ig8hxxrrEA"
+openai.api_key = OPENAI_API_KEY
 
 DB_PATH = os.environ.get("DB_PATH", os.path.abspath(os.path.join(os.getcwd(), "../data/database/chromadb")))
 COLLECTION_NAME = os.getenv("COLLECTION_NAME", "Hsrw_database")
@@ -81,9 +81,9 @@ def retrieve_and_answer(question):
     for exchange in st.session_state['chat_history'][-5:]:
         recent_conversations.append({"role": "user", "content": exchange["user"]})
         recent_conversations.append({"role": "assistant", "content": exchange["assistant"]})
-    print(10*"--")   
-    print(recent_conversations)
-    print(10*"--")
+    #print(10*"--")   
+    #print(recent_conversations)
+    #print(10*"--")
 
     # role setup and prompt engineering
     messages = [
@@ -113,6 +113,8 @@ def retrieve_and_answer(question):
             "6. *No Answer Available*: If none of the documents contain the answer, respond with a message indicating that the information is not available in this dataset rather than giving false information ,in this case try to give guidlines suggesting correct queries"
             
             "7. *Basic Greetings and Manners* If there are some greetins as a user query please reply in good manner"
+            
+            "8. *Time-Sensitive Queries*: If the query involves a specific time frame (e.g., start or end dates of events), always tailor your response to the current academic year or semester. For instance, (When do exams start?) should be interpreted as (When do exams start for the current semester (e.g., Winter 2024)? unless otherwise specified by the user."
         )
     },
     *recent_conversations,  # Add recent conversation history into the messages list
@@ -121,9 +123,9 @@ def retrieve_and_answer(question):
         "content": f"Answer the question based on the context provided. The question is:\n\n<question>{question}</question>\n\nThe contexts are:\n\n{context} and keep in mind the past history "
     }
 ]
-    print(10*"**")   
-    print(messages)
-    print(10*"**")
+    #print(10*"**")   
+    #print(messages)
+    #print(10*"**")
     # Generate the chat completion using OpenAI with the structured message
     response = openai.ChatCompletion.create(
         model="gpt-3.5-turbo-0125",
@@ -214,63 +216,85 @@ if user_input:
             "user": user_input,
             "assistant": response,
         })
+import datetime
 
 # Display chat history
 if 'chat_history' in st.session_state:
     user_image = "../assets/user.png"
     assistant_image = "../assets/ai.png"
     
-    for i, message in enumerate(st.session_state['chat_history']):
-        # Display user message with aligned icon and text
+    st.markdown("<div style='max-height: 500px; overflow-y: scroll;'>", unsafe_allow_html=True)
+
+    for message in st.session_state['chat_history']:
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  
         user_col, user_msg_col = st.columns([0.02, 0.92])
         with user_col:
             st.image(user_image, width=24)
         with user_msg_col:
             st.markdown(
                 f"""
-                <div style="display: flex; align-items: center; background-color: rgb(255, 255, 255); padding: 10px; border-radius: 10px; margin-bottom: 10px;">
-                    <span>{message['user']}</span>
+                <div style="background-color: var(--bubble-bg); color: var(--bubble-text); padding: 10px; border-radius: 10px; margin-bottom: 10px;">
+                    <small style="color: gray;">{timestamp}</small><br>
+                    {message['user']}
                 </div>
-                """, 
+                """,
                 unsafe_allow_html=True
             )
 
-        # Display assistant message with aligned icon and text
         assistant_col, assistant_msg_col = st.columns([0.02, 0.92])
         with assistant_col:
             st.image(assistant_image, width=24)
         with assistant_msg_col:
             st.markdown(
                 f"""
-                <div style="display: flex; align-items: center; background-color: #cddee4; padding: 10px; border-radius: 10px; margin-bottom: 10px;">
-                    <span>{message['assistant']}</span>
+                <div style="background-color: var(--assistant-bg); color: var(--assistant-text); padding: 10px; border-radius: 10px; margin-bottom: 10px;">
+                    <small style="color: gray;">{timestamp}</small><br>
+                    {message['assistant']}
                 </div>
-                """, 
+                """,
                 unsafe_allow_html=True
             )
 
-# Add CSS for Improved Design
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# Add CSS for Themes
 st.markdown("""
 <style>
+    :root {
+        /* Light Theme Colors */
+        --bg-color: #f0f4f9; 
+        --text-color: #2c3e50; 
+        --accent-color: #5a8eb0; 
+        --hover-accent: #4a7ca0; 
+        --bubble-bg: #e9eff5; 
+        --bubble-text: #2c3e50; 
+        --assistant-bg: #cdd8e4; 
+        --assistant-text: #1f2937; 
+
+        /* Dark Theme Colors */
+        @media (prefers-color-scheme: dark) {
+            --bg-color: #181c24; 
+            --text-color: #dce2eb; 
+            --accent-color: #4a8ab0;
+            --hover-accent: #3a6e8f; 
+            --bubble-bg: #242b36; 
+            --bubble-text: #dce2eb; 
+            --assistant-bg: #2e3a4b; 
+            --assistant-text: #dce2eb; 
+        }
+    }
+    body {
+        background-color: var(--bg-color);
+        color: var(--text-color);
+    }
     .stButton > button {
-        width: 100%;
-        background-color: #f0f2f6;
-        color: #333;
-        border: none;
-        padding: 10px;
+        background-color: var(--accent-color);
+        color: var(--text-color);
         border-radius: 5px;
-        margin-top: 5px;
-        cursor: pointer;
     }
     .stButton > button:hover {
-        background-color: #badbe3;
-        color:#333;
-    }
-    .st-chat-message {
-        background: #eef2f7;
-        padding: 15px;
-        border-radius: 15px;
-        margin-bottom: 10px;
+        background-color: var(--hover-accent);
     }
 </style>
+
 """, unsafe_allow_html=True)
