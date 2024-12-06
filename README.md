@@ -53,8 +53,8 @@ Vector Database: ChromaDB
 Frontend: Streamlit
 LLM Integration: OpenAI API
 Docker: Containerized deployment
-#🚀 Getting Started
-##Prerequisites
+# 🚀 Getting Started
+## Prerequisites
 Python 3.8+
 Docker (if using containerized deployment)
 Installation
@@ -62,8 +62,8 @@ Installation
 2.Install Python dependencies:
 3.Set up your .env file: for apis
 
-#Running the Application
-##Option 1: Run Locally
+# Running the Application
+## Option 1: Run Locally
 1.	Start the Scrapy spider to crawl the website:
 cd app/scrapper/website_scrapper
 scrapy crawl <spider_name>
@@ -71,7 +71,7 @@ scrapy crawl <spider_name>
 python app/helper/data_preprocesser.py
 3.	Launch the chatbot interface:
 python app/frontend/frontend.py
-##Option 2: Run with Docker
+## Option 2: Run with Docker
 1.	Build the Docker container:
 docker-compose build
 2.	Start the container:
